@@ -1,5 +1,7 @@
 !define TEST_SYSTEM (SLIM)
 
+!path plugins/processtesterslim/processtesterslim.jar
+
 | import |
 | six42.fitnesse.processtesterslim |
 
@@ -11,43 +13,45 @@
 | script | process tester slim |
 |attachShutDownHook|
 
-!4 run a short command and wait that it terminates but max 1 second
+!4 run a short command and wait that it terminates but max 10 second (default)
 | script | process tester slim |
-| $dir= | execute; | cmd.exe /c dir !-|-! sort | 1|
+| $dir= | executeL; | [sh, -c, /bin/ls -l / !-|-! sort] | 
 | start | $dir |
 | check | exit value | 0 |
 | check not | std err | =~/./ |
-| show | std out |
-| check | std out | =~/Fit/ |
+| show collapsed | std out |
+| check | std out | =~/root/ |
 
-!4 run a long command and wait that it terminates but max 1 second
+!4 run a long command and wait that it terminates but max 0.5 second
 !5 the command will get killed
 | script | process tester slim |
-| $dir= | execute; | cmd.exe /c dir /s | 1|
+| $dir= | executeL; | [sh, -c, for i in {0..9}; do  echo  "$i " ; echo "err $i" 1>&2; sleep 0.1s ; done] | 0.5|
 | start | $dir |
 | check | exit value | KILL |
 | $killStr= | exit value  |
-| check not | std err | =~/./ |
-| show collapsed| std out |
+| check | std err | =~/err 1/ |
+| show | std out |
 |check not | std out | =~/$killStr/|
 
 !4 start multiple programs and let them run in the background 
 | script | process tester slim |
-| $notepad= | do spawn; | notepad.exe |
-| $notepad2= | do spawn; | notepad.exe |
-| $p2= | do spawn; | cmd.exe /c dir /s |
-| $p3= | do spawn; | cmd.exe /c dir /s |
-| $tasklist= | do spawn; | cmd.exe /c tasklist !-|-! sort|
+| $notepad= | do spawn; | sleep 4m |
+| $notepad2= | do spawn; | sleep 1m |
+| $p2= | do spawnL; | [sh, -c, for i in {0..9}; do  echo  "$i " ; sleep 0.1s ; done] |
+| $p3= | do spawnL; | [sh, -c, for i in {0..9}; do  echo  "$i " ; sleep 0.1s ; done] |
+| $tasklist= | do spawnL; | [sh, -c, ps f]|
 
 | script | $notepad |
 | terminate |
 | check | exit value | KILL |
+| show  collapsed| std out |
+| show  collapsed| std err |
 
 !4 Check that the kill command works and output can be read
 | script | $p2 |
 | $first= | std out |
-|# Wait only for 1 mili seconds|
-| waitFor | 0.001| seconds|
+|# Wait only for 0.3  seconds|
+| waitFor | 0.3| seconds|
 | check | exit value | RUNNING |
 | terminate |
 | check | exit value | KILL |

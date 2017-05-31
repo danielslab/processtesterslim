@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +29,18 @@ public class ProcessTesterSlim {
       this.stdoutStream = makeStream(process.getInputStream());
       this.stderrStream = makeStream(process.getErrorStream());
     }
+
+    public void execute(List<String> command) throws IOException {
+        if (isVerbose)
+          System.out.println("command = " + command.toString());
+        this.command = command.toString();
+        ProcessBuilder pb  = new ProcessBuilder();
+        pb.command(command);
+        this.process = pb.start();
+        this.exitValue = "RUNNING";
+        this.stdoutStream = makeStream(process.getInputStream());
+        this.stderrStream = makeStream(process.getErrorStream());
+      }
 
     private AsyncLineBufferedReader makeStream(InputStream s) {
       AsyncLineBufferedReader gatherer = new AsyncLineBufferedReader(new BufferedReader(
@@ -194,6 +207,14 @@ public class ProcessTesterSlim {
     return p;
   }
 
+  public ChildProcess doSpawnL(List<String> command) throws IOException {
+	    String processId = generateUniqueProcessId();
+	    ChildProcess p = new ChildProcess();
+	    p.execute(command);
+	    commandProcessMap.put(processId, p);
+	    return p;
+	  }
+
   /**
    * Starts a command and wait some time until it is finished. If the command
    * doesn't finishes in the given time it will be terminated
@@ -210,10 +231,25 @@ public class ProcessTesterSlim {
     return p;
   }
 
+  public ChildProcess executeL(List<String> command, double timeout) throws Exception {
+	    String processId = generateUniqueProcessId();
+	    ChildProcess p = new ChildProcess();
+	    p.execute(command);
+	    commandProcessMap.put(processId, p);
+	    if (!p.waitFor(timeout)) {
+	      p.terminate();
+	    };
+	    commandProcessMap.remove(processId);
+	    return p;
+	  }
+
   public ChildProcess execute(String command) throws Exception {
     return execute( command, 10.0);
   }
   
+  public ChildProcess executeL(List<String> command) throws Exception {
+	    return executeL( command, 10.0);
+	  }
   public void pause(int seconds) throws Exception {
     int milliseconds = 1000 * seconds;
     Thread.sleep(milliseconds);
