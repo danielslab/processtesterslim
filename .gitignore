@@ -50,3 +50,5 @@ classes
 plugins
 *.zip
 
+# IDE files
+.idea/
