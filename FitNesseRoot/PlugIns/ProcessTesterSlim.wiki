@@ -1,6 +1,8 @@
-!contents -R2 -g -p -f -h
+---
+Test
+---
+!contents -R3 -g -p -f -h
 
 !define TEST_SYSTEM (SLIM)
 
 !path plugins/processtesterslim/processtesterslim.jar
-

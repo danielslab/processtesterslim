@@ -47,6 +47,8 @@ Temporary Items
 .apdisk
 
 classes
-plugins
+/plugins
 *.zip
 
+# IDE files
+.idea/
